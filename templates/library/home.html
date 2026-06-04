@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Асосӣ — MathLib BSU{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="container hero-grid">
+        <div>
+            <span class="eyebrow">Донишгоҳи давлатии Бохтар ба номи Носири Хусрав</span>
+            <h1>Китобхонаи электронии факултети математика</h1>
+            <p>Маркази ягонаи китобҳо, маводи таълимӣ ва адабиёти илмӣ барои донишҷӯён, омӯзгорон ва китобдорони факултет.</p>
+            <div class="hero-actions">
+                <a class="btn" href="{% url 'library:book_list' %}">Дидани китобҳо</a>
+                {% if user.is_authenticated %}
+                    <a class="btn btn-outline" href="{% url 'dashboard:home' %}">Панели ман</a>
+                {% else %}
+                    <a class="btn btn-outline" href="{% url 'accounts:register' %}">Бақайдгирӣ</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-card">
+            <div class="formula">∫ f(x)dx · π · AI · Python</div>
+            <h3>Низоми китобхонаи факултетӣ</h3>
+            <p>Бо PostgreSQL, нақшҳо, файлҳо, омор ва идоракунии мутамарказ.</p>
+        </div>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="stats-grid">
+        <div class="stat"><strong>{{ stats.books }}</strong><span>Китобҳо</span></div>
+        <div class="stat"><strong>{{ stats.categories }}</strong><span>Категорияҳо</span></div>
+        <div class="stat"><strong>{{ stats.students }}</strong><span>Донишҷӯён</span></div>
+        <div class="stat"><strong>{{ stats.teachers }}</strong><span>Омӯзгорон</span></div>
+    </div>
+</section>
+
+<section class="container section">
+    <div class="section-title">
+        <h2>Китобҳои нав</h2>
+        <a href="{% url 'library:book_list' %}">Ҳамаи китобҳо →</a>
+    </div>
+    <div class="book-grid">
+        {% for book in latest_books %}
+            {% include 'library/partials/book_card.html' %}
+        {% empty %}
+            <div class="empty">Ҳоло китоб илова нашудааст.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

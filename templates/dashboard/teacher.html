@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Панели омӯзгор{% endblock %}
+{% block content %}
+<section class="container section">
+    <h1>Панели омӯзгор</h1>
+    <div class="stats-grid">
+        <div class="stat"><strong>{{ my_books }}</strong><span>Китобҳои пешниҳодкарда</span></div>
+        <div class="stat"><strong>{{ my_pending_books }}</strong><span>Интизори тасдиқ</span></div>
+    </div>
+    <div class="quick-actions">
+        <a class="btn" href="{% url 'library:book_create' %}">Пешниҳоди китоб</a>
+        <a class="btn btn-outline" href="{% url 'library:book_list' %}">Ҷустуҷӯи китоб</a>
+    </div>
+    <h2>Китобҳои нав</h2>
+    <div class="book-grid">
+        {% for book in latest_books %}{% include 'library/partials/book_card.html' %}{% endfor %}
+    </div>
+</section>
+{% endblock %}

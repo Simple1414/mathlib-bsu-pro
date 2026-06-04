@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Панели китобдор{% endblock %}
+{% block content %}
+<section class="container section">
+    <h1>Панели китобдор</h1>
+    <div class="stats-grid">
+        <div class="stat"><strong>{{ approved_books }}</strong><span>Китобҳои тасдиқшуда</span></div>
+        <div class="stat"><strong>{{ pending_books }}</strong><span>Интизори тасдиқ</span></div>
+        <div class="stat"><strong>{{ requests_count }}</strong><span>Дархостҳои нав</span></div>
+    </div>
+    <div class="quick-actions">
+        <a class="btn" href="{% url 'library:book_create' %}">Иловаи китоб</a>
+        <a class="btn btn-outline" href="{% url 'library:pending_books' %}">Тасдиқи китобҳо</a>
+        <a class="btn btn-outline" href="{% url 'library:book_requests' %}">Дархостҳо</a>
+    </div>
+    <div class="panel"><h2>Китобҳои серзеркашӣ</h2>{% include 'dashboard/partials/popular.html' %}</div>
+</section>
+{% endblock %}

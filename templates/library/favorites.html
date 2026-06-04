@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Дӯстдоштаҳо{% endblock %}
+{% block content %}
+<section class="container section">
+    <h1>Китобҳои дӯстдошта</h1>
+    <div class="book-grid">
+        {% for item in items %}
+            {% with book=item.book %}{% include 'library/partials/book_card.html' %}{% endwith %}
+        {% empty %}
+            <div class="empty">Ҳоло китоб ба дӯстдоштаҳо илова нашудааст.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

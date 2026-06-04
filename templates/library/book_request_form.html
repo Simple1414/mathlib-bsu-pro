@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Дархости китоб{% endblock %}
+{% block content %}
+<section class="container section narrow">
+    <div class="panel">
+        <h1>Дархости китоб</h1>
+        <form method="post">
+            {% csrf_token %}
+            {% include 'includes/form.html' %}
+            <button class="btn" type="submit">Фиристодан</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

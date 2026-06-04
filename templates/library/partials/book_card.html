@@ -1,0 +1,17 @@
+<article class="book-card">
+    <a href="{{ book.get_absolute_url }}">
+        <div class="cover">
+            {% if book.cover %}<img src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<span>∑</span>{% endif %}
+        </div>
+        <div class="book-body">
+            <h3>{{ book.title }}</h3>
+            <p class="muted">
+                {% for author in book.authors.all %}{{ author.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}Муаллиф номаълум{% endfor %}
+            </p>
+            <div class="badges">
+                {% if book.category %}<span>{{ book.category.name }}</span>{% endif %}
+                <span>{{ book.get_language_display }}</span>
+            </div>
+        </div>
+    </a>
+</article>

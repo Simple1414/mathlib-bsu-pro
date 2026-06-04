@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Бақайдгирӣ{% endblock %}
+{% block content %}
+<section class="container section narrow">
+    <div class="panel">
+        <h1>Бақайдгирии донишҷӯ</h1>
+        <p class="muted">Нақши корбари нав ба таври худкор “Донишҷӯ” мешавад. Нақшҳои омӯзгор ва китобдорро танҳо админ медиҳад.</p>
+        <form method="post">
+            {% csrf_token %}
+            {% include 'includes/form.html' %}
+            <button class="btn" type="submit">Сабт шудан</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

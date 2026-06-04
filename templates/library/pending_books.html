@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Китобҳои интизори тасдиқ{% endblock %}
+{% block content %}
+<section class="container section">
+    <h1>Китобҳои интизори тасдиқ</h1>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Китоб</th><th>Иловакунанда</th><th>Категория</th><th>Амал</th></tr></thead>
+            <tbody>
+            {% for book in books %}
+                <tr>
+                    <td><a href="{{ book.get_absolute_url }}">{{ book.title }}</a></td>
+                    <td>{{ book.uploaded_by.full_name|default:'-' }}</td>
+                    <td>{{ book.category|default:'-' }}</td>
+                    <td><a class="btn btn-small" href="{% url 'library:approve_book' book.pk %}">Тасдиқ</a></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Китоби интизори тасдиқ нест.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

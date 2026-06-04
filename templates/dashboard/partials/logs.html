@@ -1,0 +1,7 @@
+<ul class="clean-list">
+{% for log in recent_logs %}
+    <li>{{ log.action }} <span>{{ log.object_name }}</span></li>
+{% empty %}
+    <li>Ҳоло сабт нест.</li>
+{% endfor %}
+</ul>

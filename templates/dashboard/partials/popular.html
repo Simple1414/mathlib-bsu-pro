@@ -1,0 +1,7 @@
+<ul class="clean-list">
+{% for book in popular_books %}
+    <li><a href="{{ book.get_absolute_url }}">{{ book.title }}</a><span>{{ book.downloads_count }} зеркашӣ</span></li>
+{% empty %}
+    <li>Ҳоло маълумот нест.</li>
+{% endfor %}
+</ul>

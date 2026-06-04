@@ -1,0 +1,61 @@
+{% load static %}
+<!doctype html>
+<html lang="tg">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}MathLib BSU{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<header class="topbar">
+    <div class="container nav-wrap">
+        <a class="brand" href="{% url 'library:home' %}">
+            <span class="brand-mark">∑</span>
+            <span>
+                <strong>MathLib BSU</strong>
+                <small>Китобхонаи электронии факултети математика</small>
+            </span>
+        </a>
+        <nav class="nav">
+            <a href="{% url 'library:book_list' %}">Китобҳо</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard:home' %}">Панел</a>
+                <a href="{% url 'accounts:profile' %}">Профил</a>
+                <form action="{% url 'accounts:logout' %}" method="post" class="inline-form">
+                    {% csrf_token %}
+                    <button class="link-btn" type="submit">Баромад</button>
+                </form>
+            {% else %}
+                <a href="{% url 'accounts:login' %}">Воридшавӣ</a>
+                <a class="btn btn-light" href="{% url 'accounts:register' %}">Бақайдгирӣ</a>
+            {% endif %}
+        </nav>
+    </div>
+</header>
+
+{% if messages %}
+<div class="container messages">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="container footer-grid">
+        <div>
+            <strong>MathLib BSU</strong>
+            <p>Китобхонаи электронии факултети математикаи ДДБ ба номи Носири Хусрав.</p>
+        </div>
+        <div>
+            <p>Бохтар · {% now "Y" %}</p>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ book.title }} — MathLib BSU{% endblock %}
+{% block content %}
+<section class="container section">
+    <div class="detail-grid">
+        <div class="detail-cover cover-large">
+            {% if book.cover %}<img src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<span>∑</span>{% endif %}
+        </div>
+        <div class="detail-body">
+            {% if not book.is_approved %}<span class="warning-badge">Интизори тасдиқ</span>{% endif %}
+            <h1>{{ book.title }}</h1>
+            <p class="muted">Муаллифон: {% for author in book.authors.all %}{{ author.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}номаълум{% endfor %}</p>
+            <div class="badges">
+                {% if book.category %}<span>{{ book.category.name }}</span>{% endif %}
+                <span>{{ book.get_language_display }}</span>
+                {% if book.publication_year %}<span>{{ book.publication_year }}</span>{% endif %}
+                {% if book.subject %}<span>{{ book.subject }}</span>{% endif %}
+            </div>
+            <p>{{ book.description|default:'Шарҳи китоб ворид нашудааст.' }}</p>
+            <div class="meta-row">
+                <span>Дидан: {{ book.views_count }}</span>
+                <span>Зеркашӣ: {{ book.downloads_count }}</span>
+            </div>
+            <div class="actions">
+                {% if user.is_authenticated %}
+                    <a class="btn" href="{% url 'library:download_book' book.pk %}">Зеркашӣ</a>
+                    <a class="btn btn-outline" href="{% url 'library:toggle_favorite' book.pk %}">{% if is_favorite %}Хориҷ аз дӯстдошта{% else %}Ба дӯстдошта{% endif %}</a>
+                {% else %}
+                    <a class="btn" href="{% url 'accounts:login' %}">Барои зеркашӣ ворид шавед</a>
+                {% endif %}
+                {% if can_edit %}
+                    <a class="btn btn-outline" href="{% url 'library:book_update' book.pk %}">Таҳрир</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

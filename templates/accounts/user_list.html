@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Корбарон{% endblock %}
+{% block content %}
+<section class="container section">
+    <h1>Идоракунии корбарон</h1>
+    <form method="get" class="search-panel horizontal">
+        <input class="form-control" name="q" placeholder="Ҷустуҷӯ..." value="{{ request.GET.q }}">
+        <select class="form-control" name="role">
+            <option value="">Ҳамаи нақшҳо</option>
+            <option value="ADMIN">Админ</option>
+            <option value="LIBRARIAN">Китобдор</option>
+            <option value="TEACHER">Омӯзгор</option>
+            <option value="STUDENT">Донишҷӯ</option>
+        </select>
+        <button class="btn" type="submit">Ҷустуҷӯ</button>
+    </form>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Корбар</th><th>Нақш</th><th>Факултет</th><th>Ихтисос</th><th>Курс</th><th>Амал</th></tr></thead>
+            <tbody>
+            {% for item in users %}
+                <tr>
+                    <td>{{ item.full_name }}<br><span class="muted">{{ item.username }}</span></td>
+                    <td>{{ item.get_role_display }}</td>
+                    <td>{{ item.faculty|default:'-' }}</td>
+                    <td>{{ item.specialty|default:'-' }}</td>
+                    <td>{{ item.course|default:'-' }}</td>
+                    <td><a class="btn btn-small" href="{% url 'accounts:user_role_update' item.pk %}">Нақш</a></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
