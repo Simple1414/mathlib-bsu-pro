@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.title }} — Мақола{% endblock %}
+{% block content %}
+<section class="container section">
+    <div class="panel article-detail">
+        {% if not article.is_approved %}<span class="warning-badge">Интизори тасдиқ</span>{% endif %}
+        {% if not article.is_active %}<span class="warning-badge">Ғайрифаъол</span>{% endif %}
+        <h1>{{ article.title }}</h1>
+        <p class="muted">{{ article.authors_text }} · {{ article.get_language_display }}{% if article.publication_year %} · {{ article.publication_year }}{% endif %}</p>
+        <div class="meta-row"><span>Дидан: {{ article.views_count }}</span><span>Зеркашӣ: {{ article.downloads_count }}</span></div>
+        {% if article.keywords %}<p><strong>Калидвожаҳо:</strong> {{ article.keywords }}</p>{% endif %}
+        {% if article.abstract %}<h2>Аннотатсия</h2><p>{{ article.abstract|linebreaks }}</p>{% endif %}
+        {% if article.content %}<h2>Матн</h2><div class="prose">{{ article.content|linebreaks }}</div>{% endif %}
+        <div class="actions">
+            {% if article.file %}<a class="btn btn-outline" href="{% url 'library:preview_article' article.pk %}" target="_blank">Пешнамоиш</a>{% endif %}
+            {% if user.is_authenticated and article.file %}<a class="btn" href="{% url 'library:download_article' article.pk %}">Зеркашӣ</a>{% endif %}
+            {% if can_edit %}
+                <a class="btn btn-outline" href="{% url 'library:article_update' article.pk %}">Таҳрир</a>
+                <a class="btn btn-danger" href="{% url 'library:article_delete' article.pk %}">Нест кардан</a>
+            {% endif %}
+        </div>
+    </div>
+    {% if article.file %}
+    <div class="panel preview-panel">
+        <h2>Пешнамоиши мақола</h2>
+        {% if article.is_pdf %}
+            <iframe class="pdf-preview" src="{% url 'library:preview_article' article.pk %}" title="{{ article.title }}"></iframe>
+        {% else %}
+            <p class="muted">Пешнамоиш дар дохили браузер асосан барои PDF кор мекунад.</p>
+            <a class="btn btn-outline" href="{% url 'library:preview_article' article.pk %}" target="_blank">Кушодани файл</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

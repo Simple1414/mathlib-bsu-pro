@@ -1,9 +1,8 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
 from django.shortcuts import render
 
 from accounts.models import User
-from library.models import AuditLog, Book, BookRequest, DownloadLog, FavoriteBook
+from library.models import Article, AuditLog, Book, BookRequest, DownloadLog, FavoriteBook
 
 
 @login_required
@@ -21,15 +20,18 @@ def home(request):
 @login_required
 def admin_dashboard(request):
     context = {
-        'total_books': Book.objects.count(),
-        'approved_books': Book.objects.filter(is_approved=True).count(),
-        'pending_books': Book.objects.filter(is_approved=False).count(),
+        'total_books': Book.objects.not_deleted().count(),
+        'approved_books': Book.objects.visible().count(),
+        'pending_books': Book.objects.filter(is_approved=False, is_deleted=False).count(),
+        'articles_count': Article.objects.visible().count(),
+        'pending_articles': Article.objects.filter(is_approved=False, is_deleted=False).count(),
         'users_count': User.objects.count(),
+        'active_users_count': User.objects.filter(is_active=True).count(),
         'students_count': User.objects.filter(role=User.Role.STUDENT).count(),
         'teachers_count': User.objects.filter(role=User.Role.TEACHER).count(),
         'requests_count': BookRequest.objects.filter(is_processed=False).count(),
         'recent_logs': AuditLog.objects.select_related('actor')[:10],
-        'popular_books': Book.objects.filter(is_approved=True).order_by('-downloads_count')[:5],
+        'popular_books': Book.objects.visible().order_by('-downloads_count')[:5],
     }
     return render(request, 'dashboard/admin.html', context)
 
@@ -37,11 +39,12 @@ def admin_dashboard(request):
 @login_required
 def librarian_dashboard(request):
     context = {
-        'approved_books': Book.objects.filter(is_approved=True).count(),
-        'pending_books': Book.objects.filter(is_approved=False).count(),
+        'approved_books': Book.objects.visible().count(),
+        'pending_books': Book.objects.filter(is_approved=False, is_deleted=False).count(),
+        'articles_count': Article.objects.visible().count(),
         'requests_count': BookRequest.objects.filter(is_processed=False).count(),
         'recent_downloads': DownloadLog.objects.select_related('book', 'user')[:10],
-        'popular_books': Book.objects.filter(is_approved=True).order_by('-downloads_count')[:5],
+        'popular_books': Book.objects.visible().order_by('-downloads_count')[:5],
     }
     return render(request, 'dashboard/librarian.html', context)
 
@@ -49,9 +52,10 @@ def librarian_dashboard(request):
 @login_required
 def teacher_dashboard(request):
     context = {
-        'my_books': Book.objects.filter(uploaded_by=request.user).count(),
-        'my_pending_books': Book.objects.filter(uploaded_by=request.user, is_approved=False).count(),
-        'latest_books': Book.objects.filter(is_approved=True).select_related('category')[:8],
+        'my_books': Book.objects.filter(uploaded_by=request.user, is_deleted=False).count(),
+        'my_pending_books': Book.objects.filter(uploaded_by=request.user, is_approved=False, is_deleted=False).count(),
+        'my_articles': Article.objects.filter(uploaded_by=request.user, is_deleted=False).count(),
+        'latest_books': Book.objects.visible().select_related('category')[:8],
     }
     return render(request, 'dashboard/teacher.html', context)
 
@@ -59,9 +63,9 @@ def teacher_dashboard(request):
 @login_required
 def student_dashboard(request):
     context = {
-        'favorite_count': FavoriteBook.objects.filter(user=request.user).count(),
+        'favorite_count': FavoriteBook.objects.filter(user=request.user, book__is_deleted=False).count(),
         'my_requests': BookRequest.objects.filter(user=request.user).count(),
-        'latest_books': Book.objects.filter(is_approved=True).select_related('category')[:8],
-        'popular_books': Book.objects.filter(is_approved=True).order_by('-downloads_count')[:5],
+        'latest_books': Book.objects.visible().select_related('category')[:8],
+        'popular_books': Book.objects.visible().order_by('-downloads_count')[:5],
     }
     return render(request, 'dashboard/student.html', context)

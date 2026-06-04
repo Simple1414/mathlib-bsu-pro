@@ -3,9 +3,17 @@
 {% block content %}
 <section class="container section narrow">
     <div class="panel">
-        <h1>Профили ман</h1>
-        <p class="role-pill">Нақш: {{ user.get_role_display }}</p>
-        <form method="post">
+        <div class="profile-head">
+            <div class="avatar-large">
+                {% if user.avatar %}<img src="{{ user.avatar.url }}" alt="{{ user.full_name }}">{% else %}<span>{{ user.first_name|first|default:user.username|first }}</span>{% endif %}
+            </div>
+            <div>
+                <h1>Профили ман</h1>
+                <p class="role-pill">Нақш: {{ user.get_role_display }}</p>
+                {% if not user.is_active %}<p class="warning-badge">Ҳисоб ғайрифаъол аст</p>{% endif %}
+            </div>
+        </div>
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {% include 'includes/form.html' %}
             <button class="btn" type="submit">Навсозӣ</button>

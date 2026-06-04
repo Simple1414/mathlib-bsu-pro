@@ -1,7 +1,7 @@
 <article class="book-card">
     <a href="{{ book.get_absolute_url }}">
         <div class="cover">
-            {% if book.cover %}<img src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<span>∑</span>{% endif %}
+            {% if book.cover %}<img src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<span>📘</span>{% endif %}
         </div>
         <div class="book-body">
             <h3>{{ book.title }}</h3>
@@ -11,6 +11,11 @@
             <div class="badges">
                 {% if book.category %}<span>{{ book.category.name }}</span>{% endif %}
                 <span>{{ book.get_language_display }}</span>
+            </div>
+            <div class="card-meta">
+                <span>👁 {{ book.views_count }}</span>
+                <span>⬇ {{ book.downloads_count }}</span>
+                <span>★ {{ book.average_rating }}</span>
             </div>
         </div>
     </a>

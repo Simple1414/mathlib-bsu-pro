@@ -12,21 +12,40 @@
             <option value="TEACHER">Омӯзгор</option>
             <option value="STUDENT">Донишҷӯ</option>
         </select>
+        <select class="form-control" name="status">
+            <option value="">Ҳамаи ҳолатҳо</option>
+            <option value="active">Фаъол</option>
+            <option value="inactive">Ғайрифаъол</option>
+        </select>
         <button class="btn" type="submit">Ҷустуҷӯ</button>
     </form>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Корбар</th><th>Нақш</th><th>Факултет</th><th>Ихтисос</th><th>Курс</th><th>Амал</th></tr></thead>
+            <thead><tr><th>Корбар</th><th>Нақш</th><th>Донишгоҳ</th><th>Ихтисос</th><th>Курс</th><th>Ҳолат</th><th>Амал</th></tr></thead>
             <tbody>
             {% for item in users %}
                 <tr>
-                    <td>{{ item.full_name }}<br><span class="muted">{{ item.username }}</span></td>
+                    <td class="user-cell">
+                        <span class="avatar-small">{% if item.avatar %}<img src="{{ item.avatar.url }}" alt="{{ item.full_name }}">{% else %}{{ item.first_name|first|default:item.username|first }}{% endif %}</span>
+                        <span>{{ item.full_name }}<br><span class="muted">{{ item.username }}</span></span>
+                    </td>
                     <td>{{ item.get_role_display }}</td>
-                    <td>{{ item.faculty|default:'-' }}</td>
-                    <td>{{ item.specialty|default:'-' }}</td>
+                    <td>{{ item.display_university|default:'-' }}</td>
+                    <td>{{ item.display_specialty|default:'-' }}</td>
                     <td>{{ item.course|default:'-' }}</td>
-                    <td><a class="btn btn-small" href="{% url 'accounts:user_role_update' item.pk %}">Нақш</a></td>
+                    <td>{% if item.is_active %}<span class="status active">Фаъол</span>{% else %}<span class="status inactive">Ғайрифаъол</span>{% endif %}</td>
+                    <td>
+                        <a class="btn btn-small" href="{% url 'accounts:user_role_update' item.pk %}">Танзим</a>
+                        {% if item.pk != user.pk %}
+                        <form method="post" action="{% url 'accounts:toggle_user_active' item.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <button class="btn btn-small btn-outline" type="submit">{% if item.is_active %}Ғайрифаъол{% else %}Фаъол{% endif %}</button>
+                        </form>
+                        {% endif %}
+                    </td>
                 </tr>
+            {% empty %}
+                <tr><td colspan="7">Корбар ёфт нашуд.</td></tr>
             {% endfor %}
             </tbody>
         </table>

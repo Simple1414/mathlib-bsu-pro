@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Faculty, Specialty, University, User
+from .models import User
 
 
 class RegistrationForm(UserCreationForm):
@@ -10,7 +10,8 @@ class RegistrationForm(UserCreationForm):
         model = User
         fields = [
             'username', 'last_name', 'first_name', 'middle_name', 'email', 'phone',
-            'university', 'faculty', 'specialty', 'course', 'group_name', 'password1', 'password2'
+            'university_name', 'faculty_name', 'specialty_name', 'course', 'group_name',
+            'password1', 'password2'
         ]
         labels = {
             'username': 'Логин',
@@ -18,9 +19,9 @@ class RegistrationForm(UserCreationForm):
             'first_name': 'Ном',
             'middle_name': 'Номи падар',
             'phone': 'Телефон',
-            'university': 'Донишгоҳ',
-            'faculty': 'Факултет',
-            'specialty': 'Ихтисос',
+            'university_name': 'Номи донишгоҳ',
+            'faculty_name': 'Номи факултет',
+            'specialty_name': 'Номи ихтисос',
             'course': 'Курс',
             'group_name': 'Гурӯҳ',
         }
@@ -43,7 +44,22 @@ class RegistrationForm(UserCreationForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['last_name', 'first_name', 'middle_name', 'email', 'phone', 'university', 'faculty', 'specialty', 'course', 'group_name']
+        fields = [
+            'avatar', 'last_name', 'first_name', 'middle_name', 'email', 'phone',
+            'university_name', 'faculty_name', 'specialty_name', 'course', 'group_name'
+        ]
+        labels = {
+            'avatar': 'Расми профил',
+            'last_name': 'Насаб',
+            'first_name': 'Ном',
+            'middle_name': 'Номи падар',
+            'phone': 'Телефон',
+            'university_name': 'Номи донишгоҳ',
+            'faculty_name': 'Номи факултет',
+            'specialty_name': 'Номи ихтисос',
+            'course': 'Курс',
+            'group_name': 'Гурӯҳ',
+        }
 
     def clean_course(self):
         course = self.cleaned_data.get('course')
@@ -55,4 +71,10 @@ class ProfileUpdateForm(forms.ModelForm):
 class UserRoleUpdateForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['role', 'is_verified', 'is_staff']
+        fields = ['role', 'is_verified', 'is_active', 'is_staff']
+        labels = {
+            'role': 'Нақш',
+            'is_verified': 'Тасдиқ шудааст',
+            'is_active': 'Фаъол',
+            'is_staff': 'Дастрасӣ ба Django admin',
+        }

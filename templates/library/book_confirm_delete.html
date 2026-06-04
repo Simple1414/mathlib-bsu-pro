@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Нест кардани китоб{% endblock %}
+{% block content %}
+<section class="container section narrow">
+    <div class="panel danger-panel">
+        <h1>Нест кардани китоб</h1>
+        <p>Шумо мехоҳед китобро аз намоиш хориҷ кунед:</p>
+        <h2>{{ book.title }}</h2>
+        <p class="muted">Ин амал soft delete аст: китоб аз рӯйхатҳо пинҳон мешавад, вале дар база барои барқарорсозӣ мемонад.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-danger" type="submit">Ҳа, нест кардан</button>
+            <a class="btn btn-outline" href="{{ book.get_absolute_url }}">Бекор кардан</a>
+        </form>
+    </div>
+</section>
+{% endblock %}

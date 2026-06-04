@@ -1,8 +1,9 @@
 import os
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Avg
 from django.urls import reverse
 
 
@@ -22,6 +23,18 @@ def cover_file_path(instance, filename):
     base, ext = os.path.splitext(filename)
     safe_title = instance.title[:60].replace(' ', '_')
     return f'covers/{safe_title}{ext.lower()}'
+
+
+def article_file_path(instance, filename):
+    base, ext = os.path.splitext(filename)
+    safe_title = instance.title[:60].replace(' ', '_')
+    return f'articles/{safe_title}{ext.lower()}'
+
+
+def article_cover_path(instance, filename):
+    base, ext = os.path.splitext(filename)
+    safe_title = instance.title[:60].replace(' ', '_')
+    return f'article_covers/{safe_title}{ext.lower()}'
 
 
 class Category(models.Model):
@@ -46,6 +59,14 @@ class Author(models.Model):
 
     def __str__(self):
         return self.full_name
+
+
+class BookQuerySet(models.QuerySet):
+    def visible(self):
+        return self.filter(is_approved=True, is_active=True, is_deleted=False)
+
+    def not_deleted(self):
+        return self.filter(is_deleted=False)
 
 
 class Book(models.Model):
@@ -81,11 +102,16 @@ class Book(models.Model):
         related_name='uploaded_books'
     )
     is_approved = models.BooleanField('Тасдиқ шудааст', default=False)
+    is_active = models.BooleanField('Фаъол', default=True)
+    is_deleted = models.BooleanField('Нестшуда', default=False)
     is_download_allowed = models.BooleanField('Зеркашӣ иҷозат аст', default=True)
     views_count = models.PositiveIntegerField('Дидан', default=0)
     downloads_count = models.PositiveIntegerField('Зеркашӣ', default=0)
     created_at = models.DateTimeField('Санаи илова', auto_now_add=True)
     updated_at = models.DateTimeField('Санаи навсозӣ', auto_now=True)
+    deleted_at = models.DateTimeField('Санаи несткунӣ', null=True, blank=True)
+
+    objects = BookQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'Китоб'
@@ -95,6 +121,7 @@ class Book(models.Model):
             models.Index(fields=['title']),
             models.Index(fields=['language']),
             models.Index(fields=['is_approved']),
+            models.Index(fields=['is_active', 'is_deleted']),
         ]
 
     def __str__(self):
@@ -103,10 +130,71 @@ class Book(models.Model):
     def get_absolute_url(self):
         return reverse('library:book_detail', kwargs={'pk': self.pk})
 
+    @property
+    def file_extension(self):
+        return os.path.splitext(self.file.name)[1].lower().strip('.') if self.file else ''
+
+    @property
+    def is_pdf(self):
+        return self.file_extension == 'pdf'
+
+    @property
+    def average_rating(self):
+        value = self.ratings.aggregate(avg=Avg('rating'))['avg']
+        return round(value or 0, 1)
+
     def can_be_managed_by(self, user):
         if not user.is_authenticated:
             return False
         return user.is_superuser or user.is_admin_role() or user.is_librarian_role() or self.uploaded_by_id == user.id
+
+
+class BookView(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='unique_views')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    session_key = models.CharField(max_length=80, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Дидани китоб'
+        verbose_name_plural = 'Дидани китобҳо'
+        constraints = [
+            models.UniqueConstraint(fields=['book', 'user'], name='unique_book_view_per_user'),
+            models.UniqueConstraint(fields=['book', 'session_key'], name='unique_book_view_per_session'),
+        ]
+
+
+class BookComment(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='book_comments')
+    text = models.TextField('Шарҳ')
+    is_approved = models.BooleanField('Намоён аст', default=True)
+    created_at = models.DateTimeField('Санаи шарҳ', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Шарҳи китоб'
+        verbose_name_plural = 'Шарҳҳои китоб'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user} — {self.book}'
+
+
+class BookRating(models.Model):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='book_ratings')
+    rating = models.PositiveSmallIntegerField('Баҳо', validators=[MinValueValidator(1), MaxValueValidator(5)])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Баҳои китоб'
+        verbose_name_plural = 'Баҳои китобҳо'
+        unique_together = ('book', 'user')
+
+    def __str__(self):
+        return f'{self.book} — {self.rating}'
 
 
 class FavoriteBook(models.Model):
@@ -138,6 +226,81 @@ class BookRequest(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ArticleQuerySet(models.QuerySet):
+    def visible(self):
+        return self.filter(is_approved=True, is_active=True, is_deleted=False)
+
+    def not_deleted(self):
+        return self.filter(is_deleted=False)
+
+
+class Article(models.Model):
+    class Language(models.TextChoices):
+        TAJIK = 'TJ', 'Тоҷикӣ'
+        RUSSIAN = 'RU', 'Русӣ'
+        ENGLISH = 'EN', 'Англисӣ'
+        OTHER = 'OTHER', 'Дигар'
+
+    title = models.CharField('Номи мақола', max_length=350)
+    authors_text = models.CharField('Муаллифон', max_length=500)
+    abstract = models.TextField('Аннотатсия', blank=True)
+    content = models.TextField('Матни мақола', blank=True)
+    keywords = models.CharField('Калидвожаҳо', max_length=500, blank=True)
+    publication_year = models.PositiveIntegerField('Соли нашр', null=True, blank=True)
+    language = models.CharField('Забон', max_length=20, choices=Language.choices, default=Language.TAJIK)
+    cover = models.ImageField(
+        'Расм/Муқова', upload_to=article_cover_path, blank=True, null=True,
+        validators=[FileExtensionValidator(['jpg', 'jpeg', 'png', 'webp'])]
+    )
+    file = models.FileField(
+        'Файли мақола', upload_to=article_file_path, blank=True, null=True,
+        validators=[FileExtensionValidator(['pdf', 'doc', 'docx']), validate_file_size]
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name='Иловакунанда', on_delete=models.SET_NULL,
+        null=True, related_name='uploaded_articles'
+    )
+    is_approved = models.BooleanField('Тасдиқ шудааст', default=False)
+    is_active = models.BooleanField('Фаъол', default=True)
+    is_deleted = models.BooleanField('Нестшуда', default=False)
+    views_count = models.PositiveIntegerField('Дидан', default=0)
+    downloads_count = models.PositiveIntegerField('Зеркашӣ', default=0)
+    created_at = models.DateTimeField('Санаи илова', auto_now_add=True)
+    updated_at = models.DateTimeField('Санаи навсозӣ', auto_now=True)
+    deleted_at = models.DateTimeField('Санаи несткунӣ', null=True, blank=True)
+
+    objects = ArticleQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = 'Мақола'
+        verbose_name_plural = 'Мақолаҳо'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['title']),
+            models.Index(fields=['language']),
+            models.Index(fields=['is_active', 'is_deleted']),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('library:article_detail', kwargs={'pk': self.pk})
+
+    @property
+    def file_extension(self):
+        return os.path.splitext(self.file.name)[1].lower().strip('.') if self.file else ''
+
+    @property
+    def is_pdf(self):
+        return self.file_extension == 'pdf'
+
+    def can_be_managed_by(self, user):
+        if not user.is_authenticated:
+            return False
+        return user.is_superuser or user.is_admin_role() or user.is_librarian_role() or self.uploaded_by_id == user.id
 
 
 class DownloadLog(models.Model):

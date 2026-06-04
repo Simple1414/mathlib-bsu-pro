@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
-{% block title %}{{ book.title }} — MathLib BSU{% endblock %}
+{% block title %}{{ book.title }} — Китобхона{% endblock %}
 {% block content %}
 <section class="container section">
     <div class="detail-grid">
         <div class="detail-cover cover-large">
-            {% if book.cover %}<img src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<span>∑</span>{% endif %}
+            {% if book.cover %}<img src="{{ book.cover.url }}" alt="{{ book.title }}">{% else %}<span>📘</span>{% endif %}
         </div>
         <div class="detail-body">
             {% if not book.is_approved %}<span class="warning-badge">Интизори тасдиқ</span>{% endif %}
+            {% if not book.is_active %}<span class="warning-badge">Ғайрифаъол</span>{% endif %}
             <h1>{{ book.title }}</h1>
             <p class="muted">Муаллифон: {% for author in book.authors.all %}{{ author.full_name }}{% if not forloop.last %}, {% endif %}{% empty %}номаълум{% endfor %}</p>
             <div class="badges">
@@ -20,8 +21,10 @@
             <div class="meta-row">
                 <span>Дидан: {{ book.views_count }}</span>
                 <span>Зеркашӣ: {{ book.downloads_count }}</span>
+                <span>Рейтинг: ★ {{ book.average_rating }}</span>
             </div>
             <div class="actions">
+                <a class="btn btn-outline" href="{% url 'library:preview_book' book.pk %}" target="_blank">Пешнамоиш</a>
                 {% if user.is_authenticated %}
                     <a class="btn" href="{% url 'library:download_book' book.pk %}">Зеркашӣ</a>
                     <a class="btn btn-outline" href="{% url 'library:toggle_favorite' book.pk %}">{% if is_favorite %}Хориҷ аз дӯстдошта{% else %}Ба дӯстдошта{% endif %}</a>
@@ -30,8 +33,61 @@
                 {% endif %}
                 {% if can_edit %}
                     <a class="btn btn-outline" href="{% url 'library:book_update' book.pk %}">Таҳрир</a>
+                    <a class="btn btn-danger" href="{% url 'library:book_delete' book.pk %}">Нест кардан</a>
                 {% endif %}
             </div>
+        </div>
+    </div>
+
+    <div class="panel preview-panel">
+        <h2>Пешнамоиши китоб</h2>
+        {% if book.is_pdf %}
+            <iframe class="pdf-preview" src="{% url 'library:preview_book' book.pk %}" title="{{ book.title }}"></iframe>
+        {% else %}
+            <p class="muted">Пешнамоиш дар дохили браузер асосан барои PDF кор мекунад. Барои DOC/DOCX файлро дар равзанаи нав кушоед.</p>
+            <a class="btn btn-outline" href="{% url 'library:preview_book' book.pk %}" target="_blank">Кушодани файл</a>
+        {% endif %}
+    </div>
+
+    <div class="grid-2 comments-grid">
+        <div class="panel">
+            <h2>Ситорагузорӣ</h2>
+            {% if user.is_authenticated %}
+            <form method="post">
+                {% csrf_token %}
+                {% include 'includes/form.html' with form=rating_form %}
+                <button class="btn" type="submit" name="rating_submit">Сабти ситора</button>
+            </form>
+            {% else %}
+                <p class="muted">Барои ситорагузорӣ ворид шавед.</p>
+            {% endif %}
+        </div>
+        <div class="panel">
+            <h2>Комментария</h2>
+            {% if user.is_authenticated %}
+            <form method="post">
+                {% csrf_token %}
+                {% include 'includes/form.html' with form=comment_form %}
+                <button class="btn" type="submit" name="comment_submit">Фиристодан</button>
+            </form>
+            {% else %}
+                <p class="muted">Барои гузоштани комментария ворид шавед.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Комментарияҳо</h2>
+        <div class="comment-list">
+        {% for comment in comments %}
+            <div class="comment-item">
+                <strong>{{ comment.user.full_name }}</strong>
+                <span class="muted">{{ comment.created_at|date:'d.m.Y H:i' }}</span>
+                <p>{{ comment.text|linebreaks }}</p>
+            </div>
+        {% empty %}
+            <p class="muted">Ҳоло комментария нест.</p>
+        {% endfor %}
         </div>
     </div>
 </section>

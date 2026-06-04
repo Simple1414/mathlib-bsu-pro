@@ -6,9 +6,11 @@
     <div class="stats-grid">
         <div class="stat"><strong>{{ my_books }}</strong><span>Китобҳои пешниҳодкарда</span></div>
         <div class="stat"><strong>{{ my_pending_books }}</strong><span>Интизори тасдиқ</span></div>
+        <div class="stat"><strong>{{ my_articles }}</strong><span>Мақолаҳои ман</span></div>
     </div>
     <div class="quick-actions">
         <a class="btn" href="{% url 'library:book_create' %}">Пешниҳоди китоб</a>
+        <a class="btn btn-outline" href="{% url 'library:article_create' %}">Пешниҳоди мақола</a>
         <a class="btn btn-outline" href="{% url 'library:book_list' %}">Ҷустуҷӯи китоб</a>
     </div>
     <h2>Китобҳои нав</h2>

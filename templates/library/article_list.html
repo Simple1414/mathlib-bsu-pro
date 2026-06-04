@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Мақолаҳо — Китобхонаи электронӣ{% endblock %}
+{% block content %}
+<section class="container section">
+    <div class="section-title">
+        <h1>Мақолаҳо</h1>
+        {% if user.is_authenticated and user.role != 'STUDENT' %}<a class="btn" href="{% url 'library:article_create' %}">Иловаи мақола</a>{% endif %}
+    </div>
+
+    <form method="get" class="search-panel">
+        {% include 'includes/form.html' with form=form %}
+        <button class="btn" type="submit">Ҷустуҷӯ</button>
+    </form>
+
+    <div class="article-list">
+        {% for article in page_obj %}
+            <article class="article-card">
+                <h2><a href="{{ article.get_absolute_url }}">{{ article.title }}</a></h2>
+                <p class="muted">{{ article.authors_text }} · {{ article.get_language_display }}{% if article.publication_year %} · {{ article.publication_year }}{% endif %}</p>
+                <p>{{ article.abstract|default:article.content|truncatewords:38 }}</p>
+                <div class="card-meta"><span>👁 {{ article.views_count }}</span><span>⬇ {{ article.downloads_count }}</span></div>
+            </article>
+        {% empty %}
+            <div class="empty">Мақолаи мувофиқ ёфт нашуд.</div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">← Пешина</a>{% endif %}
+        <span>Саҳифаи {{ page_obj.number }} аз {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Баъдӣ →</a>{% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

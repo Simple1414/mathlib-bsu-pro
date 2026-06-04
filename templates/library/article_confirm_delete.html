@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Нест кардани мақола{% endblock %}
+{% block content %}
+<section class="container section narrow">
+    <div class="panel danger-panel">
+        <h1>Нест кардани мақола</h1>
+        <p>Шумо мехоҳед мақоларо аз намоиш хориҷ кунед:</p>
+        <h2>{{ article.title }}</h2>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-danger" type="submit">Ҳа, нест кардан</button>
+            <a class="btn btn-outline" href="{{ article.get_absolute_url }}">Бекор кардан</a>
+        </form>
+    </div>
+</section>
+{% endblock %}

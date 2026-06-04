@@ -5,17 +5,18 @@
     <div class="section-title"><h1>Панели админ</h1><a class="btn" href="/admin/">Django Admin</a></div>
     <div class="stats-grid">
         <div class="stat"><strong>{{ total_books }}</strong><span>Ҳамаи китобҳо</span></div>
-        <div class="stat"><strong>{{ approved_books }}</strong><span>Тасдиқшуда</span></div>
-        <div class="stat"><strong>{{ pending_books }}</strong><span>Интизори тасдиқ</span></div>
+        <div class="stat"><strong>{{ approved_books }}</strong><span>Китобҳои фаъол</span></div>
+        <div class="stat"><strong>{{ pending_books }}</strong><span>Китобҳои интизор</span></div>
+        <div class="stat"><strong>{{ articles_count }}</strong><span>Мақолаҳо</span></div>
         <div class="stat"><strong>{{ users_count }}</strong><span>Корбарон</span></div>
-        <div class="stat"><strong>{{ students_count }}</strong><span>Донишҷӯён</span></div>
-        <div class="stat"><strong>{{ teachers_count }}</strong><span>Омӯзгорон</span></div>
+        <div class="stat"><strong>{{ active_users_count }}</strong><span>Корбарони фаъол</span></div>
     </div>
     <div class="quick-actions">
         <a class="btn" href="{% url 'accounts:user_list' %}">Корбарон</a>
         <a class="btn btn-outline" href="{% url 'library:pending_books' %}">Китобҳои интизор</a>
         <a class="btn btn-outline" href="{% url 'library:book_requests' %}">Дархостҳо</a>
         <a class="btn btn-outline" href="{% url 'library:book_create' %}">Иловаи китоб</a>
+        <a class="btn btn-outline" href="{% url 'library:article_create' %}">Иловаи мақола</a>
     </div>
     <div class="grid-2">
         <div class="panel"><h2>Китобҳои серзеркашӣ</h2>{% include 'dashboard/partials/popular.html' %}</div>

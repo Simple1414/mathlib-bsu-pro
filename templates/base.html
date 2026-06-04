@@ -1,37 +1,49 @@
 {% load static %}
 <!doctype html>
-<html lang="tg">
+<html lang="{{ site_language|default:'tg' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}MathLib BSU{% endblock %}</title>
+    <title>{% block title %}Китобхонаи электронии факултети математика{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-<header class="topbar">
-    <div class="container nav-wrap">
-        <a class="brand" href="{% url 'library:home' %}">
-            <span class="brand-mark">∑</span>
-            <span>
-                <strong>MathLib BSU</strong>
-                <small>Китобхонаи электронии факултети математика</small>
-            </span>
-        </a>
-        <nav class="nav">
-            <a href="{% url 'library:book_list' %}">Китобҳо</a>
+<header class="site-header">
+    <div class="header-bg"></div>
+    <div class="container header-inner">
+        <div class="language-switch">
+            {% for code, label in available_languages %}
+                <a class="lang {% if site_language == code %}active{% endif %}" href="{% url 'library:set_language' code %}">{{ label }}</a>
+            {% endfor %}
+        </div>
+        <div class="university-title">
+            <div class="university-name">ДОНИШГОҲИ ДАВЛАТИИ БОХТАР БА НОМИ НОСИРИ ХУСРАВ</div>
+            <div class="faculty-name">ФАКУЛТЕТИ МАТЕМАТИКА</div>
+            <h1>{{ ui.library_title }}</h1>
+        </div>
+        <div class="auth-links">
             {% if user.is_authenticated %}
-                <a href="{% url 'dashboard:home' %}">Панел</a>
-                <a href="{% url 'accounts:profile' %}">Профил</a>
+                <a href="{% url 'dashboard:home' %}">{{ ui.dashboard }}</a>
+                <a href="{% url 'accounts:profile' %}">{{ ui.profile }}</a>
                 <form action="{% url 'accounts:logout' %}" method="post" class="inline-form">
                     {% csrf_token %}
-                    <button class="link-btn" type="submit">Баромад</button>
+                    <button class="link-btn" type="submit">{{ ui.logout }}</button>
                 </form>
             {% else %}
-                <a href="{% url 'accounts:login' %}">Воридшавӣ</a>
-                <a class="btn btn-light" href="{% url 'accounts:register' %}">Бақайдгирӣ</a>
+                <a href="{% url 'accounts:register' %}">{{ ui.register }}</a>
+                <a href="{% url 'accounts:login' %}">{{ ui.login }}</a>
             {% endif %}
-        </nav>
+        </div>
     </div>
+    <nav class="main-nav">
+        <div class="container nav-line">
+            <a href="{% url 'library:home' %}">{{ ui.home }}</a>
+            <a href="{% url 'library:book_list' %}">{{ ui.books }}</a>
+            <a href="{% url 'library:article_list' %}">{{ ui.articles }}</a>
+            <a href="{% url 'library:about' %}">{{ ui.about }}</a>
+            <a href="{% url 'library:contact' %}">{{ ui.contact }}</a>
+        </div>
+    </nav>
 </header>
 
 {% if messages %}
@@ -49,11 +61,11 @@
 <footer class="footer">
     <div class="container footer-grid">
         <div>
-            <strong>MathLib BSU</strong>
-            <p>Китобхонаи электронии факултети математикаи ДДБ ба номи Носири Хусрав.</p>
+            <strong>Китобхонаи электронии факултети математика</strong>
+            <p>Донишгоҳи давлатии Бохтар ба номи Носири Хусрав.</p>
         </div>
         <div>
-            <p>Бохтар · {% now "Y" %}</p>
+            <p>ш. Бохтар · {% now "Y" %}</p>
         </div>
     </div>
 </footer>

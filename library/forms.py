@@ -1,5 +1,5 @@
 from django import forms
-from .models import Author, Book, BookRequest, Category
+from .models import Article, Author, Book, BookComment, BookRating, BookRequest, Category
 
 
 class BookForm(forms.ModelForm):
@@ -13,7 +13,7 @@ class BookForm(forms.ModelForm):
         model = Book
         fields = [
             'title', 'authors', 'new_authors', 'category', 'description', 'publication_year',
-            'language', 'subject', 'keywords', 'cover', 'file', 'is_download_allowed'
+            'language', 'subject', 'keywords', 'cover', 'file', 'is_download_allowed', 'is_active'
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
@@ -22,7 +22,7 @@ class BookForm(forms.ModelForm):
 
     def save(self, commit=True, uploaded_by=None, auto_approve=False):
         book = super().save(commit=False)
-        if uploaded_by:
+        if uploaded_by and not book.uploaded_by_id:
             book.uploaded_by = uploaded_by
         if auto_approve:
             book.is_approved = True
@@ -34,6 +34,22 @@ class BookForm(forms.ModelForm):
                 author, _ = Author.objects.get_or_create(full_name=name)
                 book.authors.add(author)
         return book
+
+
+class BookCommentForm(forms.ModelForm):
+    class Meta:
+        model = BookComment
+        fields = ['text']
+        labels = {'text': 'Комментария'}
+        widgets = {'text': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Фикри худро дар бораи китоб нависед...'})}
+
+
+class BookRatingForm(forms.ModelForm):
+    class Meta:
+        model = BookRating
+        fields = ['rating']
+        labels = {'rating': 'Ситора'}
+        widgets = {'rating': forms.Select(choices=[(i, f'{i} ситора') for i in range(1, 6)])}
 
 
 class BookRequestForm(forms.ModelForm):
@@ -49,3 +65,31 @@ class BookSearchForm(forms.Form):
     q = forms.CharField(required=False, label='Ҷустуҷӯ')
     category = forms.ModelChoiceField(required=False, queryset=Category.objects.all(), label='Категория')
     language = forms.ChoiceField(required=False, choices=[('', 'Ҳамаи забонҳо')] + list(Book.Language.choices), label='Забон')
+
+
+class ArticleForm(forms.ModelForm):
+    class Meta:
+        model = Article
+        fields = [
+            'title', 'authors_text', 'abstract', 'content', 'keywords', 'publication_year',
+            'language', 'cover', 'file', 'is_active'
+        ]
+        widgets = {
+            'abstract': forms.Textarea(attrs={'rows': 4}),
+            'content': forms.Textarea(attrs={'rows': 10}),
+        }
+
+    def save(self, commit=True, uploaded_by=None, auto_approve=False):
+        article = super().save(commit=False)
+        if uploaded_by and not article.uploaded_by_id:
+            article.uploaded_by = uploaded_by
+        if auto_approve:
+            article.is_approved = True
+        if commit:
+            article.save()
+        return article
+
+
+class ArticleSearchForm(forms.Form):
+    q = forms.CharField(required=False, label='Ҷустуҷӯ')
+    language = forms.ChoiceField(required=False, choices=[('', 'Ҳамаи забонҳо')] + list(Article.Language.choices), label='Забон')
