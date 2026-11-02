@@ -85,10 +85,10 @@ Secrets come from `.env` (gitignored). **Never read, print, or commit `.env`**; 
 ## Known issues (open, as of 2026-11-02)
 
 1. Upload paths are predictable (`books/<title>.pdf`); prefer randomized names. Media protection relies on `PUBLIC_MEDIA_DIRS` (Django) and the nginx config in `deploy/`.
-2. No `.env.example` (README references it); no CI yet.
+2. No `.env.example` (README references it).
 3. Production HTTPS settings (`SECURE_HSTS_SECONDS`, secure cookies, SSL redirect) are env-driven and must be set on the server.
 
-Resolved: GET-based mutations (`approve_book`, `toggle_favorite`, `mark_request_processed`) are POST-only; protected uploads are no longer served from `/media/`; `SECRET_KEY` fails fast when `DEBUG=False`; static storage uses `STORAGES`.
+Resolved: CI added (`.github/workflows/ci.yml`: tests on Postgres 16, migrations check, `check --deploy`, `pip-audit`). GET-based mutations (`approve_book`, `toggle_favorite`, `mark_request_processed`) are POST-only; protected uploads are no longer served from `/media/`; `SECRET_KEY` fails fast when `DEBUG=False`; static storage uses `STORAGES`.
 
 ## Local development without `.env`
 
