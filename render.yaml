@@ -1,0 +1,69 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Render dashboard → New → Blueprint → choose this repository → Apply.
+#
+# FREE PLAN LIMITS (chosen for testing):
+#   - Uploaded files (book PDFs, covers) are lost on every redeploy/restart
+#     (free web services have no persistent disk).
+#   - The free PostgreSQL database expires after ~30 days.
+#   - The site sleeps after 15 min without visitors; the first request then
+#     takes up to ~1 minute.
+# For real use switch `plan` to a paid instance and add a `disk` (see docs/RENDER.md).
+
+databases:
+  - name: mathlib-db
+    plan: free
+    region: frankfurt
+    databaseName: mathlib_bsu
+    user: mathlib_user
+    postgresMajorVersion: "16"
+    ipAllowList: []  # internal connections only (from the web service)
+
+services:
+  - type: web
+    name: mathlib-bsu
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    # Free plan has no pre-deploy hook or shell, so migrations, seed data and the
+    # admin account are applied on start (all idempotent).
+    startCommand: >-
+      python manage.py migrate --noinput &&
+      python manage.py seed_initial_data &&
+      python manage.py ensure_admin &&
+      gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+      --workers 2 --timeout 120 --access-logfile - --error-logfile -
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mathlib-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      # Render terminates HTTPS and forwards X-Forwarded-Proto.
+      - key: BEHIND_PROXY
+        value: "True"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
+      - key: SECURE_HSTS_SECONDS
+        value: "3600"
+      # No nginx on Render: Django serves public media (covers/avatars only).
+      - key: SERVE_MEDIA_FILES
+        value: "True"
+      # Entered by you in the Render dashboard when applying the Blueprint.
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false

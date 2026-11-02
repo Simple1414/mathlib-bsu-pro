@@ -211,3 +211,21 @@ class MissingFileTests(SmokeTestBase):
         with self.assertLogs('library.views', level='ERROR'):
             response = self.client.get(reverse('library:download_book', args=[self.book.pk]))
         self.assertEqual(response.status_code, 404)
+
+
+class BookAuthorInputTests(SmokeTestBase):
+    def post_book(self, **extra):
+        self.client.force_login(self.users['LIBRARIAN'])
+        data = {'title': 'Китоби нав', 'language': 'TJ', 'file': pdf(), 'is_active': 'on', **extra}
+        return self.client.post(reverse('library:book_create'), data)
+
+    def test_only_new_author_typed_is_enough(self):
+        response = self.post_book(new_authors='Умари Хайём, Абӯалӣ ибни Сино')
+        self.assertEqual(response.status_code, 302)
+        book = Book.objects.get(title='Китоби нав')
+        self.assertEqual(sorted(a.full_name for a in book.authors.all()), ['Абӯалӣ ибни Сино', 'Умари Хайём'])
+
+    def test_no_author_at_all_is_rejected(self):
+        response = self.post_book(new_authors='  ,  ')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('authors', response.context['form'].errors)

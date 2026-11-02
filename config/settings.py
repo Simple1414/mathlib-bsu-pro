@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import unquote, urlparse
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
@@ -14,13 +15,19 @@ if not SECRET_KEY:
     if not DEBUG:
         raise ImproperlyConfigured('SECRET_KEY must be set in the environment when DEBUG=False.')
     SECRET_KEY = _DEV_SECRET_KEY
-elif not DEBUG and (SECRET_KEY == _DEV_SECRET_KEY or len(SECRET_KEY) < 50):
-    raise ImproperlyConfigured('SECRET_KEY is insecure: use a random value of at least 50 characters.')
+elif not DEBUG and (SECRET_KEY == _DEV_SECRET_KEY or len(SECRET_KEY) < 32):
+    raise ImproperlyConfigured('SECRET_KEY is insecure: use a random value of at least 32 characters.')
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
 CSRF_TRUSTED_ORIGINS = [
     h.strip() for h in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if h.strip()
 ]
+
+# Render (render.com) sets the public hostname automatically.
+RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RENDER_EXTERNAL_HOSTNAME}')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -70,14 +77,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+def _database_from_url(url):
+    """Parse postgres://user:pass@host:port/name (as provided by Render/Heroku-style hosts)."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ('postgres', 'postgresql'):
+        raise ImproperlyConfigured(f'Unsupported DATABASE_URL scheme: {parsed.scheme!r}')
+    return {
+        'NAME': unquote(parsed.path.lstrip('/')),
+        'USER': unquote(parsed.username or ''),
+        'PASSWORD': unquote(parsed.password or ''),
+        'HOST': parsed.hostname or '',
+        'PORT': str(parsed.port or 5432),
+    }
+
+
+_db = (
+    _database_from_url(os.environ['DATABASE_URL']) if os.getenv('DATABASE_URL') else {
         'NAME': os.getenv('DB_NAME', 'mathlib_bsu'),
         'USER': os.getenv('DB_USER', 'mathlib_user'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
+    }
+)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        **_db,
         'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '60')),
         'CONN_HEALTH_CHECKS': True,
     }
@@ -116,7 +142,7 @@ STORAGES = {
 }
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', BASE_DIR / 'media'))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
