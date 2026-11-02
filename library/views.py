@@ -218,6 +218,7 @@ def download_book(request, pk):
     return FileResponse(book.file.open('rb'), as_attachment=True, filename=book.file.name.split('/')[-1])
 
 
+@require_POST
 @login_required
 def toggle_favorite(request, pk):
     book = get_object_or_404(Book, pk=pk, is_approved=True, is_active=True, is_deleted=False)
@@ -300,6 +301,7 @@ def pending_books(request):
     return render(request, 'library/pending_books.html', {'books': books})
 
 
+@require_POST
 @role_required(User.Role.ADMIN, User.Role.LIBRARIAN)
 def approve_book(request, pk):
     book = get_object_or_404(Book, pk=pk, is_deleted=False)
@@ -333,6 +335,7 @@ def book_requests(request):
     return render(request, 'library/book_requests.html', {'requests_qs': requests_qs})
 
 
+@require_POST
 @role_required(User.Role.ADMIN, User.Role.LIBRARIAN)
 def mark_request_processed(request, pk):
     req = get_object_or_404(BookRequest, pk=pk)

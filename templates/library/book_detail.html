@@ -27,7 +27,7 @@
                 <a class="btn btn-outline" href="{% url 'library:preview_book' book.pk %}" target="_blank">Пешнамоиш</a>
                 {% if user.is_authenticated %}
                     <a class="btn" href="{% url 'library:download_book' book.pk %}">Зеркашӣ</a>
-                    <a class="btn btn-outline" href="{% url 'library:toggle_favorite' book.pk %}">{% if is_favorite %}Хориҷ аз дӯстдошта{% else %}Ба дӯстдошта{% endif %}</a>
+                    <form method="post" action="{% url 'library:toggle_favorite' book.pk %}" class="inline-form">{% csrf_token %}<button type="submit" class="btn btn-outline">{% if is_favorite %}Хориҷ аз дӯстдошта{% else %}Ба дӯстдошта{% endif %}</button></form>
                 {% else %}
                     <a class="btn" href="{% url 'accounts:login' %}">Барои зеркашӣ ворид шавед</a>
                 {% endif %}

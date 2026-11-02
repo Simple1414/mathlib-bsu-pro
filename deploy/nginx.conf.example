@@ -8,8 +8,16 @@ server {
         alias /var/www/mathlib_bsu_pro/staticfiles/;
     }
 
+    # Public media only: covers and avatars.
+    location ~ ^/media/(covers|article_covers|avatars)/ {
+        root /var/www/mathlib_bsu_pro;
+        add_header X-Content-Type-Options nosniff;
+    }
+
+    # Book and article files must go through Django's permission-checked
+    # preview/download views. Never serve them directly.
     location /media/ {
-        alias /var/www/mathlib_bsu_pro/media/;
+        return 404;
     }
 
     location / {

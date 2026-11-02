@@ -1,12 +1,21 @@
 import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'unsafe-dev-key-change-in-env')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+
+_DEV_SECRET_KEY = 'unsafe-dev-key-change-in-env'
+SECRET_KEY = os.getenv('SECRET_KEY', '')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured('SECRET_KEY must be set in the environment when DEBUG=False.')
+    SECRET_KEY = _DEV_SECRET_KEY
+elif not DEBUG and (SECRET_KEY == _DEV_SECRET_KEY or len(SECRET_KEY) < 50):
+    raise ImproperlyConfigured('SECRET_KEY is insecure: use a random value of at least 50 characters.')
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',') if h.strip()]
 CSRF_TRUSTED_ORIGINS = [
@@ -92,7 +101,17 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    # Hashed + compressed files in production (requires `collectstatic`);
+    # plain storage in development so templates work without collectstatic.
+    'staticfiles': {
+        'BACKEND': (
+            'django.contrib.staticfiles.storage.StaticFilesStorage' if DEBUG
+            else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        ),
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -118,4 +137,11 @@ X_FRAME_OPTIONS = 'DENY'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 
-SERVE_MEDIA_FILES = os.getenv('SERVE_MEDIA_FILES', 'True').lower() == 'true'
+# Serve public media (covers, avatars) from Django. Use only for development or
+# small deployments; in production nginx should serve these directories.
+SERVE_MEDIA_FILES = os.getenv('SERVE_MEDIA_FILES', str(DEBUG)).lower() == 'true'
+
+# Only these MEDIA_ROOT subdirectories are publicly reachable under MEDIA_URL.
+# Book and article files ('books/', 'articles/') are served exclusively through
+# permission-checked views (preview/download), never as public media.
+PUBLIC_MEDIA_DIRS = ('covers', 'article_covers', 'avatars')

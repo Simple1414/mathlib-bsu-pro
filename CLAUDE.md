@@ -84,8 +84,12 @@ Secrets come from `.env` (gitignored). **Never read, print, or commit `.env`**; 
 
 ## Known issues (open, as of 2026-11-02)
 
-1. `approve_book`, `toggle_favorite`, `toggle_user_active` accept GET → CSRF-able state changes (`require_POST` imported, not applied).
-2. `SERVE_MEDIA_FILES` defaults to `True`; `/media/` exposes book files regardless of login/approval/`is_download_allowed`.
-3. `STATICFILES_STORAGE` is ignored since Django 5.1 — migrate to `STORAGES`.
-4. `SECRET_KEY` falls back to a hardcoded default; should fail fast when `DEBUG=False`.
-5. No test suite, no CI, no `.env.example` (README references it).
+1. Upload paths are predictable (`books/<title>.pdf`); prefer randomized names. Media protection relies on `PUBLIC_MEDIA_DIRS` (Django) and the nginx config in `deploy/`.
+2. No `.env.example` (README references it); no CI yet.
+3. Production HTTPS settings (`SECURE_HSTS_SECONDS`, secure cookies, SSL redirect) are env-driven and must be set on the server.
+
+Resolved: GET-based mutations (`approve_book`, `toggle_favorite`, `mark_request_processed`) are POST-only; protected uploads are no longer served from `/media/`; `SECRET_KEY` fails fast when `DEBUG=False`; static storage uses `STORAGES`.
+
+## Local development without `.env`
+
+`DB_PASSWORD=... DEBUG=True python manage.py runserver` — settings read env vars directly. Tests: `DEBUG=True python manage.py test` (production-mode static storage needs `collectstatic`).

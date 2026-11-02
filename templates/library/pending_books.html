@@ -12,7 +12,7 @@
                     <td><a href="{{ book.get_absolute_url }}">{{ book.title }}</a></td>
                     <td>{{ book.uploaded_by.full_name|default:'-' }}</td>
                     <td>{{ book.category|default:'-' }}</td>
-                    <td><a class="btn btn-small" href="{% url 'library:approve_book' book.pk %}">Тасдиқ</a></td>
+                    <td><form method="post" action="{% url 'library:approve_book' book.pk %}" class="inline-form">{% csrf_token %}<button type="submit" class="btn btn-small">Тасдиқ</button></form></td>
                 </tr>
             {% empty %}
                 <tr><td colspan="4">Китоби интизори тасдиқ нест.</td></tr>
