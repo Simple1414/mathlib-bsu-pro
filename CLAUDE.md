@@ -84,11 +84,10 @@ Secrets come from `.env` (gitignored). **Never read, print, or commit `.env`**; 
 
 ## Known issues (open, as of 2026-11-02)
 
-1. Upload paths are predictable (`books/<title>.pdf`); prefer randomized names. Media protection relies on `PUBLIC_MEDIA_DIRS` (Django) and the nginx config in `deploy/`.
-2. No `.env.example` (README references it).
-3. Production HTTPS settings (`SECURE_HSTS_SECONDS`, secure cookies, SSL redirect) are env-driven and must be set on the server.
+1. Anonymous users can preview (read inline) approved book PDFs, even when `is_download_allowed=False`; downloads require login. Confirm this is the intended policy.
+2. Login has no rate limiting (consider `django-axes` before wide public use).
 
-Resolved: CI added (`.github/workflows/ci.yml`: tests on Postgres 16, migrations check, `check --deploy`, `pip-audit`). GET-based mutations (`approve_book`, `toggle_favorite`, `mark_request_processed`) are POST-only; protected uploads are no longer served from `/media/`; `SECRET_KEY` fails fast when `DEBUG=False`; static storage uses `STORAGES`.
+Resolved: CI (`.github/workflows/ci.yml`); POST-only mutations incl. `approve_article`; protected uploads not served from `/media/`; random upload names + content (magic-byte) validation; re-approval required when non-managers edit approved content; `SECRET_KEY` fail-fast; `STORAGES`; HTTPS behind proxy (`BEHIND_PROXY`), HSTS env, `LOGGING`, `/healthz/`, 404/500 pages, `.env.example`, deployment guide `docs/DEPLOY.md`.
 
 ## Local development without `.env`
 

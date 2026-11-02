@@ -78,6 +78,8 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
+        'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '60')),
+        'CONN_HEALTH_CHECKS': True,
     }
 }
 
@@ -131,11 +133,23 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
 SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False').lower() == 'true'
-SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+SECURE_REFERRER_POLICY = 'same-origin'
+SECURE_REDIRECT_EXEMPT = [r'^healthz/$']  # allow local HTTP health checks
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+
+# Behind nginx: trust X-Forwarded-Proto so Django knows the request was HTTPS.
+# Without this, SECURE_SSL_REDIRECT=True causes an infinite redirect loop.
+if os.getenv('BEHIND_PROXY', 'False').lower() == 'true':
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# HSTS: enable only after HTTPS works for the whole domain (start small, e.g. 3600).
+SECURE_HSTS_SECONDS = int(os.getenv('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False').lower() == 'true'
+SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() == 'true'
 
 # Serve public media (covers, avatars) from Django. Use only for development or
 # small deployments; in production nginx should serve these directories.
@@ -145,3 +159,21 @@ SERVE_MEDIA_FILES = os.getenv('SERVE_MEDIA_FILES', str(DEBUG)).lower() == 'true'
 # Book and article files ('books/', 'articles/') are served exclusively through
 # permission-checked views (preview/download), never as public media.
 PUBLIC_MEDIA_DIRS = ('covers', 'article_covers', 'avatars')
+
+# Log to stdout/stderr (collected by systemd-journald under gunicorn).
+# Without this, unhandled 500 errors are not recorded anywhere when DEBUG=False.
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'standard'},
+    },
+    'root': {'handlers': ['console'], 'level': os.getenv('LOG_LEVEL', 'INFO')},
+    'loggers': {
+        'django.request': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+        'django.security': {'handlers': ['console'], 'level': 'WARNING', 'propagate': False},
+    },
+}

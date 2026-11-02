@@ -4,9 +4,11 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path
 
+from .health import healthz
 from .media import public_media
 
 urlpatterns = [
+    path('healthz/', healthz, name='healthz'),
     path('admin/', admin.site.urls),
     path('', include('library.urls')),
     path('accounts/', include('accounts.urls')),
