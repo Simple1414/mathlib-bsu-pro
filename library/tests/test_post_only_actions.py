@@ -9,12 +9,24 @@ from django.urls import reverse
 from accounts.models import User
 from library.models import Book, BookRequest, FavoriteBook
 
-MEDIA_ROOT = tempfile.mkdtemp()
 PASSWORD = 'Test-Passw0rd-123'
 
 
-@override_settings(MEDIA_ROOT=MEDIA_ROOT)
 class PostOnlyActionTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Each test class (and each parallel worker) gets its own media dir.
+        cls._media_root = tempfile.mkdtemp()
+        cls._media_override = override_settings(MEDIA_ROOT=cls._media_root)
+        cls._media_override.enable()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls._media_override.disable()
+        shutil.rmtree(cls._media_root, ignore_errors=True)
+
     @classmethod
     def setUpTestData(cls):
         cls.student = User.objects.create_user('student', password=PASSWORD, role=User.Role.STUDENT)
@@ -27,10 +39,6 @@ class PostOnlyActionTests(TestCase):
         )
         cls.book_request = BookRequest.objects.create(user=cls.student, title='Wanted')
 
-    @classmethod
-    def tearDownClass(cls):
-        super().tearDownClass()
-        shutil.rmtree(MEDIA_ROOT, ignore_errors=True)
 
     # approve_book
     def test_approve_book_rejects_get(self):

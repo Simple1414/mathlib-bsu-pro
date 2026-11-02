@@ -1,4 +1,5 @@
 import os
+import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
@@ -13,28 +14,54 @@ def validate_file_size(file):
         raise ValidationError(f'Ҳаҷми файл набояд аз {max_size_mb} MB зиёд бошад.')
 
 
+def _random_upload_path(folder, filename):
+    """Store uploads under a random name so titles never influence the path.
+
+    Using the title allowed '/' and '..' into the path (crash / sub-folders) and
+    made protected file URLs guessable.
+    """
+    ext = os.path.splitext(filename)[1].lower()
+    return f'{folder}/{uuid.uuid4().hex}{ext}'
+
+
 def book_file_path(instance, filename):
-    base, ext = os.path.splitext(filename)
-    safe_title = instance.title[:60].replace(' ', '_')
-    return f'books/{safe_title}{ext.lower()}'
+    return _random_upload_path('books', filename)
 
 
 def cover_file_path(instance, filename):
-    base, ext = os.path.splitext(filename)
-    safe_title = instance.title[:60].replace(' ', '_')
-    return f'covers/{safe_title}{ext.lower()}'
+    return _random_upload_path('covers', filename)
 
 
 def article_file_path(instance, filename):
-    base, ext = os.path.splitext(filename)
-    safe_title = instance.title[:60].replace(' ', '_')
-    return f'articles/{safe_title}{ext.lower()}'
+    return _random_upload_path('articles', filename)
 
 
 def article_cover_path(instance, filename):
-    base, ext = os.path.splitext(filename)
-    safe_title = instance.title[:60].replace(' ', '_')
-    return f'article_covers/{safe_title}{ext.lower()}'
+    return _random_upload_path('article_covers', filename)
+
+
+# Magic bytes for allowed document types: PDF, DOCX (ZIP container), legacy DOC (OLE2).
+_DOCUMENT_SIGNATURES = {
+    'pdf': (b'%PDF-',),
+    'docx': (b'PK\x03\x04',),
+    'doc': (b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1',),
+}
+
+
+def validate_document_content(file):
+    """Reject files whose content does not match their extension (e.g. renamed .exe)."""
+    if getattr(file, '_committed', False):
+        return  # already stored and validated on upload
+    ext = os.path.splitext(file.name)[1].lower().lstrip('.')
+    signatures = _DOCUMENT_SIGNATURES.get(ext)
+    if not signatures:
+        return
+    position = file.tell() if hasattr(file, 'tell') else 0
+    file.seek(0)
+    header = file.read(8)
+    file.seek(position)
+    if not any(header.startswith(sig) for sig in signatures):
+        raise ValidationError('Мӯҳтавои файл ба навъи он мувофиқ нест.')
 
 
 class Category(models.Model):
@@ -91,7 +118,7 @@ class Book(models.Model):
     )
     file = models.FileField(
         'Файли китоб', upload_to=book_file_path,
-        validators=[FileExtensionValidator(['pdf', 'doc', 'docx']), validate_file_size]
+        validators=[FileExtensionValidator(['pdf', 'doc', 'docx']), validate_file_size, validate_document_content]
     )
 
     uploaded_by = models.ForeignKey(
@@ -256,7 +283,7 @@ class Article(models.Model):
     )
     file = models.FileField(
         'Файли мақола', upload_to=article_file_path, blank=True, null=True,
-        validators=[FileExtensionValidator(['pdf', 'doc', 'docx']), validate_file_size]
+        validators=[FileExtensionValidator(['pdf', 'doc', 'docx']), validate_file_size, validate_document_content]
     )
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name='Иловакунанда', on_delete=models.SET_NULL,
