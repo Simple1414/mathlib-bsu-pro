@@ -20,6 +20,19 @@ class BookForm(forms.ModelForm):
             'authors': forms.SelectMultiple(attrs={'size': 7}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # An author may come from the list *or* be typed in `new_authors`.
+        self.fields['authors'].required = False
+
+    def clean(self):
+        cleaned = super().clean()
+        has_listed = bool(cleaned.get('authors'))
+        has_new = any(x.strip() for x in (cleaned.get('new_authors') or '').split(','))
+        if not has_listed and not has_new:
+            self.add_error('authors', 'Ақаллан як муаллифро интихоб кунед ё дар «Муаллифони нав» нависед.')
+        return cleaned
+
     def save(self, commit=True, uploaded_by=None, auto_approve=False):
         book = super().save(commit=False)
         if uploaded_by and not book.uploaded_by_id:

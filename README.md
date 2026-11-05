@@ -95,6 +95,10 @@ http://127.0.0.1:8000/admin/
 
 ## 6. Барои production
 
+> **Render (зуд, бо чанд клик):** [docs/RENDER.md](docs/RENDER.md).
+>
+> Дастури пурраи гузоштан дар интернет (nginx + HTTPS + gunicorn): **[docs/DEPLOY.md](docs/DEPLOY.md)**. Намунаи танзимот: `.env.example`.
+
 Пеш аз гузоштан дар сервер:
 
 1. `DEBUG=False`

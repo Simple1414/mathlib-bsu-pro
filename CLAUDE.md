@@ -84,8 +84,11 @@ Secrets come from `.env` (gitignored). **Never read, print, or commit `.env`**; 
 
 ## Known issues (open, as of 2026-11-02)
 
-1. `approve_book`, `toggle_favorite`, `toggle_user_active` accept GET → CSRF-able state changes (`require_POST` imported, not applied).
-2. `SERVE_MEDIA_FILES` defaults to `True`; `/media/` exposes book files regardless of login/approval/`is_download_allowed`.
-3. `STATICFILES_STORAGE` is ignored since Django 5.1 — migrate to `STORAGES`.
-4. `SECRET_KEY` falls back to a hardcoded default; should fail fast when `DEBUG=False`.
-5. No test suite, no CI, no `.env.example` (README references it).
+1. Anonymous users can preview (read inline) approved book PDFs, even when `is_download_allowed=False`; downloads require login. Confirm this is the intended policy.
+2. Login has no rate limiting (consider `django-axes` before wide public use).
+
+Resolved: CI (`.github/workflows/ci.yml`); POST-only mutations incl. `approve_article`; protected uploads not served from `/media/`; random upload names + content (magic-byte) validation; re-approval required when non-managers edit approved content; `SECRET_KEY` fail-fast; `STORAGES`; HTTPS behind proxy (`BEHIND_PROXY`), HSTS env, `LOGGING`, `/healthz/`, 404/500 pages, `.env.example`, deployment guide `docs/DEPLOY.md`.
+
+## Local development without `.env`
+
+`DB_PASSWORD=... DEBUG=True python manage.py runserver` — settings read env vars directly. Tests: `DEBUG=True python manage.py test` (production-mode static storage needs `collectstatic`).

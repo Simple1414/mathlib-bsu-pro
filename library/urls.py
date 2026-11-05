@@ -27,6 +27,7 @@ urlpatterns = [
     path('articles/<int:pk>/delete/', views.article_delete, name='article_delete'),
     path('articles/<int:pk>/preview/', views.preview_article, name='preview_article'),
     path('articles/<int:pk>/download/', views.download_article, name='download_article'),
+    path('articles/<int:pk>/approve/', views.approve_article, name='approve_article'),
 
     path('favorites/', views.favorites, name='favorites'),
     path('requests/new/', views.request_book, name='request_book'),

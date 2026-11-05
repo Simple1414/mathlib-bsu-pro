@@ -13,7 +13,7 @@
                     <td>{{ req.author|default:'-' }}</td>
                     <td>{{ req.user.full_name }}</td>
                     <td>{% if req.is_processed %}Баррасӣ шуд{% else %}Нав{% endif %}</td>
-                    <td>{% if not req.is_processed %}<a class="btn btn-small" href="{% url 'library:mark_request_processed' req.pk %}">Қайд кардан</a>{% endif %}</td>
+                    <td>{% if not req.is_processed %}<form method="post" action="{% url 'library:mark_request_processed' req.pk %}" class="inline-form">{% csrf_token %}<button type="submit" class="btn btn-small">Қайд кардан</button></form>{% endif %}</td>
                 </tr>
             {% empty %}
                 <tr><td colspan="5">Дархост нест.</td></tr>

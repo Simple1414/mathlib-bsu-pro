@@ -1,3 +1,6 @@
+import logging
+import os
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -24,10 +27,32 @@ from .permissions import can_manage_books, can_submit_books, role_required
 SUPPORTED_LANGUAGES = {'tg', 'ru', 'en'}
 
 
+logger = logging.getLogger(__name__)
+
+
+def file_response(obj, as_attachment):
+    """Stream obj.file, turning a file missing from storage into 404 instead of 500."""
+    try:
+        handle = obj.file.open('rb')
+    except FileNotFoundError:
+        logger.error('File missing from storage for %s #%s: %s', type(obj).__name__, obj.pk, obj.file.name)
+        raise Http404('Файл дастрас нест.')
+    return FileResponse(handle, as_attachment=as_attachment, filename=download_filename(obj))
+
+
+def download_filename(obj):
+    """Human-readable download name built from the title (storage names are random)."""
+    ext = os.path.splitext(obj.file.name)[1].lower()
+    title = ''.join(ch for ch in obj.title if ch.isalnum() or ch in ' -_.()').strip()
+    return f'{title[:100] or "file"}{ext}'
+
+
 def get_client_ip(request):
+    # nginx appends the real client address as the *last* X-Forwarded-For entry;
+    # earlier entries are supplied by the client and can be forged.
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
-        return x_forwarded_for.split(',')[0].strip()
+        return x_forwarded_for.split(',')[-1].strip()
     return request.META.get('REMOTE_ADDR')
 
 
@@ -202,7 +227,7 @@ def preview_book(request, pk):
     book = public_or_manageable_book(request, pk)
     if not book.file:
         raise Http404('Файл дастрас нест.')
-    return FileResponse(book.file.open('rb'), as_attachment=False, filename=book.file.name.split('/')[-1])
+    return file_response(book, as_attachment=False)
 
 
 @login_required
@@ -215,9 +240,10 @@ def download_book(request, pk):
     DownloadLog.objects.create(user=request.user, book=book, ip_address=get_client_ip(request))
     Book.objects.filter(pk=book.pk).update(downloads_count=F('downloads_count') + 1)
     audit(request, 'Зеркашии китоб', book.title)
-    return FileResponse(book.file.open('rb'), as_attachment=True, filename=book.file.name.split('/')[-1])
+    return file_response(book, as_attachment=True)
 
 
+@require_POST
 @login_required
 def toggle_favorite(request, pk):
     book = get_object_or_404(Book, pk=pk, is_approved=True, is_active=True, is_deleted=False)
@@ -268,9 +294,15 @@ def book_update(request, pk):
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES, instance=book)
         if form.is_valid():
-            updated = form.save(uploaded_by=book.uploaded_by, auto_approve=book.is_approved)
+            is_manager = can_manage_books(request.user)
+            if not is_manager:
+                form.instance.is_approved = False  # changes by uploaders need re-approval
+            updated = form.save(uploaded_by=book.uploaded_by, auto_approve=is_manager and book.is_approved)
             audit(request, 'Таҳрири китоб', updated.title)
-            messages.success(request, 'Китоб навсозӣ шуд.')
+            if is_manager:
+                messages.success(request, 'Китоб навсозӣ шуд.')
+            else:
+                messages.success(request, 'Китоб навсозӣ шуд ва то тасдиқи китобдор аз нашр бардошта шуд.')
             return redirect(updated.get_absolute_url())
     else:
         form = BookForm(instance=book)
@@ -297,9 +329,11 @@ def book_delete(request, pk):
 @role_required(User.Role.ADMIN, User.Role.LIBRARIAN)
 def pending_books(request):
     books = Book.objects.filter(is_approved=False, is_deleted=False).select_related('uploaded_by', 'category').prefetch_related('authors')
-    return render(request, 'library/pending_books.html', {'books': books})
+    articles = Article.objects.filter(is_approved=False, is_deleted=False).select_related('uploaded_by')
+    return render(request, 'library/pending_books.html', {'books': books, 'articles': articles})
 
 
+@require_POST
 @role_required(User.Role.ADMIN, User.Role.LIBRARIAN)
 def approve_book(request, pk):
     book = get_object_or_404(Book, pk=pk, is_deleted=False)
@@ -308,6 +342,18 @@ def approve_book(request, pk):
     book.save(update_fields=['is_approved', 'is_active'])
     audit(request, 'Тасдиқи китоб', book.title)
     messages.success(request, 'Китоб тасдиқ шуд.')
+    return redirect('library:pending_books')
+
+
+@require_POST
+@role_required(User.Role.ADMIN, User.Role.LIBRARIAN)
+def approve_article(request, pk):
+    article = get_object_or_404(Article, pk=pk, is_deleted=False)
+    article.is_approved = True
+    article.is_active = True
+    article.save(update_fields=['is_approved', 'is_active'])
+    audit(request, 'Тасдиқи мақола', article.title)
+    messages.success(request, 'Мақола тасдиқ шуд.')
     return redirect('library:pending_books')
 
 
@@ -333,6 +379,7 @@ def book_requests(request):
     return render(request, 'library/book_requests.html', {'requests_qs': requests_qs})
 
 
+@require_POST
 @role_required(User.Role.ADMIN, User.Role.LIBRARIAN)
 def mark_request_processed(request, pk):
     req = get_object_or_404(BookRequest, pk=pk)
@@ -374,7 +421,7 @@ def preview_article(request, pk):
     article = public_or_manageable_article(request, pk)
     if not article.file:
         raise Http404('Файл дастрас нест.')
-    return FileResponse(article.file.open('rb'), as_attachment=False, filename=article.file.name.split('/')[-1])
+    return file_response(article, as_attachment=False)
 
 
 @login_required
@@ -384,7 +431,7 @@ def download_article(request, pk):
         raise Http404('Файл дастрас нест.')
     Article.objects.filter(pk=article.pk).update(downloads_count=F('downloads_count') + 1)
     audit(request, 'Зеркашии мақола', article.title)
-    return FileResponse(article.file.open('rb'), as_attachment=True, filename=article.file.name.split('/')[-1])
+    return file_response(article, as_attachment=True)
 
 
 @login_required
@@ -413,9 +460,15 @@ def article_update(request, pk):
     if request.method == 'POST':
         form = ArticleForm(request.POST, request.FILES, instance=article)
         if form.is_valid():
-            updated = form.save(uploaded_by=article.uploaded_by, auto_approve=article.is_approved)
+            is_manager = can_manage_books(request.user)
+            if not is_manager:
+                form.instance.is_approved = False  # changes by uploaders need re-approval
+            updated = form.save(uploaded_by=article.uploaded_by, auto_approve=is_manager and article.is_approved)
             audit(request, 'Таҳрири мақола', updated.title)
-            messages.success(request, 'Мақола навсозӣ шуд.')
+            if is_manager:
+                messages.success(request, 'Мақола навсозӣ шуд.')
+            else:
+                messages.success(request, 'Мақола навсозӣ шуд ва то тасдиқи китобдор аз нашр бардошта шуд.')
             return redirect(updated.get_absolute_url())
     else:
         form = ArticleForm(instance=article)
