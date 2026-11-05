@@ -9,3 +9,6 @@ db.sqlite3
 .DS_Store
 .idea/
 .vscode/
+
+# Graphify knowledge graph (built locally: graphify update .)
+graphify-out/
