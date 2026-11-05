@@ -13,54 +13,20 @@
         "repo": "DietrichGebert/ponytail"
       }
     },
-    "addy-agent-skills": {
-      "source": {
-        "source": "github",
-        "repo": "addyosmani/agent-skills"
-      }
-    },
     "ui-ux-pro-max-skill": {
       "source": {
         "source": "github",
         "repo": "nextlevelbuilder/ui-ux-pro-max-skill"
       }
-    },
-    "taste-skill": {
-      "source": {
-        "source": "github",
-        "repo": "Leonxlnx/taste-skill"
-      }
-    },
-    "impeccable": {
-      "source": {
-        "source": "github",
-        "repo": "pbakaus/impeccable"
-      }
-    },
-    "ppt-master": {
-      "source": {
-        "source": "github",
-        "repo": "hugohe3/ppt-master"
-      }
     }
   },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
-    "code-review@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
-    "claude-code-setup@claude-plugins-official": true,
-    "pr-review-toolkit@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
-    "ponytail@ponytail": true,
-    "agent-skills@addy-agent-skills": true,
+    "frontend-design@claude-plugins-official": true,
     "ui-ux-pro-max@ui-ux-pro-max-skill": true,
-    "taste-skill@taste-skill": true,
-    "impeccable@impeccable": true,
-    "ppt-master@ppt-master": true
+    "ponytail@ponytail": true
   },
   "permissions": {
     "allow": [
@@ -105,42 +71,6 @@
       "Bash(rm -rf:*)",
       "Bash(python manage.py reset_db:*)",
       "Bash(dropdb:*)"
-    ]
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash|Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "graphify hook-guard search",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Read|Glob",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "graphify hook-guard read",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "graphify hook-guard compact",
-            "timeout": 10
-          }
-        ]
-      }
     ]
   }
 }
